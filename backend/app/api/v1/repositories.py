@@ -1,14 +1,31 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.deps import get_analysis_service, get_current_user, get_repository_service
+from app.api.deps import (
+    get_ai_review_service,
+    get_analysis_service,
+    get_current_user,
+    get_repository_service,
+)
+from app.models.review import ReviewType
 from app.models.user import User
 from app.schemas.analysis import ReviewListResponse, ReviewResponse
 from app.schemas.repository import (
     RepositoryCreate,
     RepositoryListResponse,
     RepositoryResponse,
+)
+from app.services.ai_review_service import (
+    AIReviewService,
+    AIReviewServiceError,
+    OllamaNotReadyError,
+)
+from app.services.ai_review_service import (
+    RepositoryNotReadyError as AIRepositoryNotReadyError,
+)
+from app.services.ai_review_service import (
+    ReviewNotFoundError as AIReviewNotFoundError,
 )
 from app.services.analysis_service import (
     AnalysisService,
@@ -114,6 +131,40 @@ def analyze_repository(
         ) from exc
 
 
+@router.post(
+    "/{repository_id}/ai-review",
+    response_model=ReviewResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def run_ai_review(
+    repository_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    ai_review_service: AIReviewService = Depends(get_ai_review_service),
+) -> ReviewResponse:
+    try:
+        return ai_review_service.run_ai_review(current_user, repository_id)
+    except AIReviewNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=exc.message,
+        ) from exc
+    except AIRepositoryNotReadyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.message,
+        ) from exc
+    except OllamaNotReadyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=exc.message,
+        ) from exc
+    except AIReviewServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=exc.message,
+        ) from exc
+
+
 @router.get("/{repository_id}/reviews", response_model=ReviewListResponse)
 def list_repository_reviews(
     repository_id: uuid.UUID,
@@ -133,11 +184,16 @@ def list_repository_reviews(
 @router.get("/{repository_id}/reviews/latest", response_model=ReviewResponse)
 def get_latest_repository_review(
     repository_id: uuid.UUID,
+    review_type: ReviewType | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     analysis_service: AnalysisService = Depends(get_analysis_service),
 ) -> ReviewResponse:
     try:
-        review = analysis_service.get_latest_review(current_user, repository_id)
+        review = analysis_service.get_latest_review(
+            current_user,
+            repository_id,
+            review_type=review_type,
+        )
     except ReviewNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -1,14 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
+import type { Review, ReviewType } from "../api/types";
 import { IssueList } from "../components/analysis/IssueList";
+import { ReviewTypeBadge } from "../components/analysis/ReviewTypeBadge";
 import { RepositoryStatusBadge } from "../components/repositories/RepositoryStatusBadge";
+
+async function fetchLatestReview(
+  repositoryId: string,
+  reviewType: ReviewType,
+): Promise<Review | null> {
+  try {
+    return await apiClient.getLatestReview(repositoryId, reviewType);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
 
 export function RepositoryDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<ReviewType>("static");
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["repository", id],
@@ -16,30 +34,51 @@ export function RepositoryDetailsPage() {
     enabled: Boolean(id),
   });
 
+  const { data: ollamaHealth } = useQuery({
+    queryKey: ["ollama-health"],
+    queryFn: apiClient.getOllamaHealth,
+    enabled: data?.status === "ready",
+    retry: false,
+  });
+
   const {
-    data: latestReview,
-    isLoading: reviewLoading,
-    refetch: refetchReview,
+    data: staticReview,
+    isLoading: staticReviewLoading,
+    refetch: refetchStaticReview,
   } = useQuery({
-    queryKey: ["review", "latest", id],
-    queryFn: async () => {
-      try {
-        return await apiClient.getLatestReview(id!);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-          return null;
-        }
-        throw error;
-      }
-    },
+    queryKey: ["review", "latest", id, "static"],
+    queryFn: () => fetchLatestReview(id!, "static"),
     enabled: Boolean(id) && data?.status === "ready",
   });
+
+  const {
+    data: aiReview,
+    isLoading: aiReviewLoading,
+    refetch: refetchAiReview,
+  } = useQuery({
+    queryKey: ["review", "latest", id, "ai"],
+    queryFn: () => fetchLatestReview(id!, "ai"),
+    enabled: Boolean(id) && data?.status === "ready",
+  });
+
+  const activeReview = activeTab === "static" ? staticReview : aiReview;
+  const reviewLoading = activeTab === "static" ? staticReviewLoading : aiReviewLoading;
 
   const analyzeMutation = useMutation({
     mutationFn: () => apiClient.analyzeRepository(id!),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["review", "latest", id] });
-      await refetchReview();
+      await refetchStaticReview();
+      setActiveTab("static");
+    },
+  });
+
+  const aiReviewMutation = useMutation({
+    mutationFn: () => apiClient.aiReviewRepository(id!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["review", "latest", id] });
+      await refetchAiReview();
+      setActiveTab("ai");
     },
   });
 
@@ -70,6 +109,8 @@ export function RepositoryDetailsPage() {
     );
   }
 
+  const ollamaReady = ollamaHealth?.status === "available";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -85,17 +126,32 @@ export function RepositoryDetailsPage() {
           </h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{data.url}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <RepositoryStatusBadge status={data.status} />
           {data.status === "ready" && (
-            <button
-              type="button"
-              onClick={() => analyzeMutation.mutate()}
-              disabled={analyzeMutation.isPending}
-              className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-            >
-              {analyzeMutation.isPending ? "Analyzing..." : "Run analysis"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => analyzeMutation.mutate()}
+                disabled={analyzeMutation.isPending}
+                className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              >
+                {analyzeMutation.isPending ? "Analyzing..." : "Run static analysis"}
+              </button>
+              <button
+                type="button"
+                onClick={() => aiReviewMutation.mutate()}
+                disabled={aiReviewMutation.isPending || !ollamaReady}
+                title={
+                  ollamaReady
+                    ? "Run AI review via Ollama"
+                    : "Ollama is unavailable — check Settings"
+                }
+                className="rounded-lg border border-purple-300 bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-800 hover:bg-purple-100 disabled:opacity-50 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-200 dark:hover:bg-purple-900"
+              >
+                {aiReviewMutation.isPending ? "Reviewing..." : "Run AI review"}
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -108,23 +164,71 @@ export function RepositoryDetailsPage() {
         </div>
       </div>
 
+      {data.status === "ready" && ollamaHealth && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Ollama:{" "}
+          <span
+            className={
+              ollamaReady ? "text-green-600 dark:text-green-400" : "text-amber-600"
+            }
+          >
+            {ollamaReady
+              ? `ready (${ollamaHealth.model})`
+              : "unavailable — start Ollama and pull the configured model"}
+          </span>
+        </p>
+      )}
+
+      {(analyzeMutation.isError || aiReviewMutation.isError) && (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          {(analyzeMutation.error ?? aiReviewMutation.error) instanceof ApiError
+            ? (analyzeMutation.error ?? aiReviewMutation.error)?.message
+            : "Review request failed."}
+        </p>
+      )}
+
+      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => setActiveTab("static")}
+          className={`border-b-2 px-4 py-2 text-sm font-medium ${
+            activeTab === "static"
+              ? "border-primary-600 text-primary-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Static analysis
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("ai")}
+          className={`border-b-2 px-4 py-2 text-sm font-medium ${
+            activeTab === "ai"
+              ? "border-purple-600 text-purple-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          AI review
+        </button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
           <p className="text-sm text-gray-500">Overall score</p>
           <p className="mt-2 text-3xl font-semibold">
-            {latestReview?.overall_score ?? "—"}
+            {activeReview?.overall_score ?? "—"}
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
           <p className="text-sm text-gray-500">Files analyzed</p>
           <p className="mt-2 text-3xl font-semibold">
-            {latestReview?.files_analyzed ?? "—"}
+            {activeReview?.files_analyzed ?? "—"}
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
           <p className="text-sm text-gray-500">Issues detected</p>
           <p className="mt-2 text-3xl font-semibold">
-            {latestReview?.issues_count ?? "—"}
+            {activeReview?.issues_count ?? "—"}
           </p>
         </div>
       </div>
@@ -149,19 +253,32 @@ export function RepositoryDetailsPage() {
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-          <h3 className="font-semibold">Analysis summary</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">Review summary</h3>
+            {activeReview && (
+              <ReviewTypeBadge reviewType={activeReview.review_type} />
+            )}
+          </div>
           {reviewLoading && (
-            <p className="mt-4 text-sm text-gray-500">Loading analysis...</p>
+            <p className="mt-4 text-sm text-gray-500">Loading review...</p>
           )}
-          {!reviewLoading && !latestReview && data.status === "ready" && (
+          {!reviewLoading && !activeReview && data.status === "ready" && (
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              No analysis yet. Click &quot;Run analysis&quot; to scan the repository.
+              No {activeTab === "static" ? "static analysis" : "AI review"} yet.
+              Run one using the buttons above.
             </p>
           )}
-          {latestReview && (
-            <p className="mt-4 text-sm text-gray-700 dark:text-gray-300">
-              {latestReview.summary}
-            </p>
+          {activeReview && (
+            <>
+              {activeReview.ai_model && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Model: {activeReview.ai_model}
+                </p>
+              )}
+              <p className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                {activeReview.summary}
+              </p>
+            </>
           )}
           {data.status === "failed" && (
             <p className="mt-4 text-sm text-red-600 dark:text-red-400">
@@ -171,7 +288,7 @@ export function RepositoryDetailsPage() {
         </div>
       </div>
 
-      {latestReview && latestReview.file_results.length > 0 && (
+      {activeReview && activeReview.file_results.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
           <h3 className="font-semibold">File scores</h3>
           <div className="mt-4 overflow-x-auto">
@@ -185,7 +302,7 @@ export function RepositoryDetailsPage() {
                 </tr>
               </thead>
               <tbody>
-                {latestReview.file_results.map((file) => (
+                {activeReview.file_results.map((file) => (
                   <tr
                     key={file.id}
                     className="border-b border-gray-100 dark:border-gray-800"
@@ -202,10 +319,10 @@ export function RepositoryDetailsPage() {
         </div>
       )}
 
-      {latestReview && (
+      {activeReview && (
         <div>
           <h3 className="mb-4 text-lg font-semibold">Detected issues</h3>
-          <IssueList issues={latestReview.issues} />
+          <IssueList issues={activeReview.issues} />
         </div>
       )}
     </div>

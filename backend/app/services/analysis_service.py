@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.config.settings import Settings
 from app.models.repository import Repository, RepositoryStatus
-from app.models.review import FileAnalysisResult, ReviewStatus
+from app.models.review import FileAnalysisResult, ReviewStatus, ReviewType
 from app.models.user import User
 from app.repositories.repository_repository import RepositoryRepository
 from app.repositories.review_repository import ReviewRepository
@@ -65,6 +65,7 @@ class AnalysisService:
             repository_id=repository.id,
             user_id=user.id,
             status=ReviewStatus.RUNNING,
+            review_type=ReviewType.STATIC,
         )
         review.started_at = datetime.now(UTC)
         self._reviews.update(review)
@@ -88,11 +89,17 @@ class AnalysisService:
         self,
         user: User,
         repository_id: uuid.UUID,
+        *,
+        review_type: ReviewType | None = None,
     ) -> ReviewResponse | None:
         repository = self._repositories.get_by_id_for_user(repository_id, user.id)
         if repository is None:
             raise ReviewNotFoundError("Repository not found")
-        review = self._reviews.get_latest_for_repository(repository_id, user.id)
+        review = self._reviews.get_latest_for_repository(
+            repository_id,
+            user.id,
+            review_type=review_type,
+        )
         if review is None:
             return None
         return ReviewResponse.model_validate(review)

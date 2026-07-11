@@ -15,8 +15,14 @@ class ReviewStatus(StrEnum):
     FAILED = "failed"
 
 
+class ReviewType(StrEnum):
+    STATIC = "static"
+    AI = "ai"
+    HYBRID = "hybrid"
+
+
 class Review(Base):
-    """Static analysis run for a repository."""
+    """Analysis or AI review run for a repository."""
 
     __tablename__ = "reviews"
 
@@ -34,6 +40,11 @@ class Review(Base):
         nullable=False,
     )
     status: Mapped[str] = mapped_column(String(32), nullable=False)
+    review_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="static"
+    )
+    ai_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    report_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
     files_analyzed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     issues_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     overall_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)

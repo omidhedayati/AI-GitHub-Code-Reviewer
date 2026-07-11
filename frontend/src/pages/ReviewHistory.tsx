@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
+import { ReviewTypeBadge } from "../components/analysis/ReviewTypeBadge";
 
 export function ReviewHistoryPage() {
   const { data: repositories, isLoading } = useQuery({
@@ -42,7 +43,7 @@ export function ReviewHistoryPage() {
       <div>
         <h2 className="text-2xl font-bold">Review History</h2>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Browse previous static analysis runs across your repositories.
+          Browse previous static and AI review runs across your repositories.
         </p>
       </div>
 
@@ -52,8 +53,8 @@ export function ReviewHistoryPage() {
 
       {!isLoading && !historyLoading && historyItems.length === 0 && (
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          No reviews yet. Clone a repository and run analysis from the repository
-          details page.
+          No reviews yet. Clone a repository and run static analysis or an AI review
+          from the repository details page.
         </p>
       )}
 
@@ -66,7 +67,10 @@ export function ReviewHistoryPage() {
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="font-medium">{review.repositoryName}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{review.repositoryName}</p>
+                  <ReviewTypeBadge reviewType={review.review_type} />
+                </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date(review.created_at).toLocaleString()}
                 </p>

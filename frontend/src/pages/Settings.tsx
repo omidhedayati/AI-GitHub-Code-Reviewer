@@ -1,7 +1,16 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { apiClient } from "../api/client";
 import { useTheme } from "../hooks/useTheme";
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
+
+  const { data: ollamaHealth, isLoading: ollamaLoading } = useQuery({
+    queryKey: ["ollama-health"],
+    queryFn: apiClient.getOllamaHealth,
+    retry: false,
+  });
 
   return (
     <div>
@@ -27,10 +36,47 @@ export function SettingsPage() {
             <option value="dark">Dark</option>
           </select>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Additional settings (Ollama endpoint, model, file size limits) will be
-          available in a future release.
-        </p>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <h3 className="font-semibold">Ollama connection</h3>
+          {ollamaLoading && (
+            <p className="mt-2 text-sm text-gray-500">Checking Ollama...</p>
+          )}
+          {!ollamaLoading && ollamaHealth && (
+            <dl className="mt-3 space-y-2 text-sm">
+              <div>
+                <dt className="text-gray-500">Status</dt>
+                <dd
+                  className={
+                    ollamaHealth.status === "available"
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-amber-600 dark:text-amber-400"
+                  }
+                >
+                  {ollamaHealth.status}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Endpoint</dt>
+                <dd className="font-mono text-xs">{ollamaHealth.base_url}</dd>
+              </div>
+              <div>
+                <dt className="text-gray-500">Configured model</dt>
+                <dd>{ollamaHealth.model}</dd>
+              </div>
+              {ollamaHealth.models_available.length > 0 && (
+                <div>
+                  <dt className="text-gray-500">Available models</dt>
+                  <dd>{ollamaHealth.models_available.join(", ")}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            Configure Ollama via environment variables: OLLAMA_BASE_URL,
+            OLLAMA_MODEL, AI_MAX_FILES, AI_MAX_CHARS_PER_FILE.
+          </p>
+        </div>
       </div>
     </div>
   );

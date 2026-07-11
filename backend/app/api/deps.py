@@ -11,9 +11,11 @@ from app.models.user import User
 from app.repositories.repository_repository import RepositoryRepository
 from app.repositories.review_repository import ReviewRepository
 from app.repositories.user_repository import UserRepository
+from app.services.ai_review_service import AIReviewService
 from app.services.analysis_service import AnalysisService
 from app.services.auth_service import AuthService, AuthServiceError
 from app.services.git_service import GitService
+from app.services.ollama_service import OllamaService
 from app.services.repository_service import RepositoryService
 from app.utils.security import decode_token
 
@@ -70,6 +72,24 @@ def get_analysis_service(
     settings: Settings = Depends(get_settings_dep),
 ) -> AnalysisService:
     return AnalysisService(repository_repository, review_repository, settings)
+
+
+def get_ollama_service(settings: Settings = Depends(get_settings_dep)) -> OllamaService:
+    return OllamaService(settings)
+
+
+def get_ai_review_service(
+    repository_repository: RepositoryRepository = Depends(get_repository_repository),
+    review_repository: ReviewRepository = Depends(get_review_repository),
+    ollama_service: OllamaService = Depends(get_ollama_service),
+    settings: Settings = Depends(get_settings_dep),
+) -> AIReviewService:
+    return AIReviewService(
+        repository_repository,
+        review_repository,
+        ollama_service,
+        settings,
+    )
 
 
 def get_current_user(

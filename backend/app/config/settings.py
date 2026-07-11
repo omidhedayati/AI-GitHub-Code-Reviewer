@@ -39,6 +39,16 @@ class Settings(BaseSettings):
         alias="OLLAMA_BASE_URL",
     )
     ollama_model: str = Field(default="qwen2.5", alias="OLLAMA_MODEL")
+    ollama_timeout_seconds: int = Field(
+        default=120,
+        alias="OLLAMA_TIMEOUT_SECONDS",
+    )
+    ai_max_files: int = Field(default=10, alias="AI_MAX_FILES")
+    ai_max_chars_per_file: int = Field(
+        default=4000,
+        alias="AI_MAX_CHARS_PER_FILE",
+    )
+    ai_temperature: float = Field(default=0.2, alias="AI_TEMPERATURE")
 
     cors_origins: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",

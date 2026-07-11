@@ -55,6 +55,8 @@ export interface RepositoryCreateRequest {
 
 export type ReviewStatus = "pending" | "running" | "completed" | "failed";
 
+export type ReviewType = "static" | "ai" | "hybrid";
+
 export type IssueCategory =
   | "bug"
   | "duplicated_code"
@@ -97,6 +99,9 @@ export interface Review {
   repository_id: string;
   user_id: string;
   status: ReviewStatus;
+  review_type: ReviewType;
+  ai_model: string | null;
+  report_markdown: string | null;
   files_analyzed: number;
   issues_count: number;
   overall_score: number;

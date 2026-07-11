@@ -76,8 +76,17 @@ export interface HealthResponse {
   status: string;
 }
 
+export interface OllamaHealthResponse {
+  status: string;
+  model: string;
+  models_available: string[];
+  base_url: string;
+}
+
 export const apiClient = {
   getHealth: () => request<HealthResponse>("/api/v1/health"),
+
+  getOllamaHealth: () => request<OllamaHealthResponse>("/api/v1/health/ollama"),
 
   register: (data: RegisterRequest) =>
     request<AuthResponse>("/api/v1/auth/register", {
@@ -124,10 +133,21 @@ export const apiClient = {
       auth: true,
     }),
 
-  getLatestReview: (repositoryId: string) =>
-    request<Review>(`/api/v1/repositories/${repositoryId}/reviews/latest`, {
+  aiReviewRepository: (id: string) =>
+    request<Review>(`/api/v1/repositories/${id}/ai-review`, {
+      method: "POST",
       auth: true,
     }),
+
+  getLatestReview: (repositoryId: string, reviewType?: Review["review_type"]) =>
+    request<Review>(
+      `/api/v1/repositories/${repositoryId}/reviews/latest${
+        reviewType ? `?review_type=${reviewType}` : ""
+      }`,
+      {
+        auth: true,
+      },
+    ),
 
   getReview: (reviewId: string) =>
     request<Review>(`/api/v1/reviews/${reviewId}`, { auth: true }),

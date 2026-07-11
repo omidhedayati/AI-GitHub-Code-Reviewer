@@ -4,6 +4,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.review import ReviewType
+
 
 class ReviewStatus(StrEnum):
     PENDING = "pending"
@@ -67,6 +69,9 @@ class ReviewResponse(BaseModel):
     repository_id: uuid.UUID
     user_id: uuid.UUID
     status: ReviewStatus
+    review_type: ReviewType
+    ai_model: str | None = None
+    report_markdown: str | None = None
     files_analyzed: int
     issues_count: int
     overall_score: float

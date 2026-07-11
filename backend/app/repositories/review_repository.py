@@ -3,7 +3,13 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.review import FileAnalysisResult, Review, ReviewIssue, ReviewStatus
+from app.models.review import (
+    FileAnalysisResult,
+    Review,
+    ReviewIssue,
+    ReviewStatus,
+    ReviewType,
+)
 from app.services.analyzers.base import AnalysisIssue
 
 
@@ -19,11 +25,13 @@ class ReviewRepository:
         repository_id: uuid.UUID,
         user_id: uuid.UUID,
         status: ReviewStatus = ReviewStatus.PENDING,
+        review_type: ReviewType = ReviewType.STATIC,
     ) -> Review:
         review = Review(
             repository_id=repository_id,
             user_id=user_id,
             status=status.value,
+            review_type=review_type.value,
         )
         self._db.add(review)
         self._db.commit()
@@ -58,6 +66,8 @@ class ReviewRepository:
         self,
         repository_id: uuid.UUID,
         user_id: uuid.UUID,
+        *,
+        review_type: ReviewType | None = None,
     ) -> Review | None:
         statement = (
             select(Review)
@@ -69,9 +79,10 @@ class ReviewRepository:
                 Review.repository_id == repository_id,
                 Review.user_id == user_id,
             )
-            .order_by(Review.created_at.desc())
-            .limit(1)
         )
+        if review_type is not None:
+            statement = statement.where(Review.review_type == review_type.value)
+        statement = statement.order_by(Review.created_at.desc()).limit(1)
         return self._db.scalar(statement)
 
     def list_for_repository(
@@ -100,6 +111,8 @@ class ReviewRepository:
         summary: str,
         status: ReviewStatus,
         error_message: str | None = None,
+        ai_model: str | None = None,
+        report_markdown: str | None = None,
     ) -> Review:
         review.issues = [
             ReviewIssue(
@@ -123,6 +136,10 @@ class ReviewRepository:
         review.summary = summary
         review.status = status.value
         review.error_message = error_message
+        if ai_model is not None:
+            review.ai_model = ai_model
+        if report_markdown is not None:
+            review.report_markdown = report_markdown
         self._db.add(review)
         self._db.commit()
         reloaded = self.get_by_id(review.id)

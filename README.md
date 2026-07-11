@@ -6,7 +6,7 @@ A production-oriented web application for analyzing GitHub repositories and pull
 
 AI GitHub Code Reviewer helps developers inspect code quality across multiple languages, surface issues with severity and confidence scores, and generate structured review reports. The application stores review history in PostgreSQL and provides a modern dashboard for browsing results.
 
-**Current status:** Foundation, JWT authentication, GitHub cloning, and multi-language static analysis are implemented. Ollama AI review integration is on the roadmap.
+**Current status:** Foundation, JWT authentication, GitHub cloning, multi-language static analysis, and Ollama AI reviews are implemented. Reports and user settings UI are on the roadmap.
 
 ## Screenshots
 
@@ -99,6 +99,12 @@ To include the Ollama container:
 docker compose --profile ai up --build
 ```
 
+When using the Docker Ollama service, set `OLLAMA_BASE_URL=http://ollama:11434` in `.env` and pull a model:
+
+```bash
+docker compose exec ollama ollama pull qwen2.5
+```
+
 ## Local Development
 
 ### Backend
@@ -160,6 +166,10 @@ GitHub blocks pushes of workflow files when your HTTPS token lacks the **workflo
 | `CORS_ORIGINS` | `http://localhost:5173,...` | Allowed CORS origins (comma-separated) |
 | `OLLAMA_BASE_URL` | `http://host.docker.internal:11434` | Ollama API endpoint |
 | `OLLAMA_MODEL` | `qwen2.5` | Default LLM model |
+| `OLLAMA_TIMEOUT_SECONDS` | `120` | Ollama request timeout |
+| `AI_MAX_FILES` | `10` | Max files sent to the LLM per review |
+| `AI_MAX_CHARS_PER_FILE` | `4000` | Max characters per file in AI prompts |
+| `AI_TEMPERATURE` | `0.2` | LLM sampling temperature |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | Frontend API base URL |
 | `REPOS_WORKSPACE_ROOT` | `./.repos` | Local path for cloned repositories |
 | `GIT_CLONE_DEPTH` | `1` | Shallow clone depth |
@@ -186,9 +196,11 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 | `GET` | `/api/v1/repositories/{id}` | Repository details |
 | `DELETE` | `/api/v1/repositories/{id}` | Delete repository and workspace files |
 | `POST` | `/api/v1/repositories/{id}/analyze` | Run static analysis |
+| `POST` | `/api/v1/repositories/{id}/ai-review` | Run Ollama AI review |
 | `GET` | `/api/v1/repositories/{id}/reviews` | List analysis runs |
-| `GET` | `/api/v1/repositories/{id}/reviews/latest` | Latest analysis run |
+| `GET` | `/api/v1/repositories/{id}/reviews/latest` | Latest run (`?review_type=static\|ai`) |
 | `GET` | `/api/v1/reviews/{id}` | Analysis run details |
+| `GET` | `/api/v1/health/ollama` | Ollama connectivity and model status |
 
 ## Project Structure
 
@@ -224,7 +236,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 - [x] JWT authentication (register, login, refresh tokens)
 - [x] GitHub repository cloning and URL validation
 - [x] Multi-language static analysis (Python, JS/TS, Java, Go, Rust, C#, C++)
-- [ ] Ollama-powered structured AI reviews
+- [x] Ollama-powered structured AI reviews
 - [ ] Markdown, JSON, and summary reports
 - [ ] Review history and search
 - [ ] User settings (Ollama endpoint, model, ignored paths)
