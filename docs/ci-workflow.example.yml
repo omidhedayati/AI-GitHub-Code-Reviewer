@@ -1,3 +1,9 @@
+# Copy this file to .github/workflows/ci.yml to enable GitHub Actions CI.
+# GitHub requires a token with the "workflow" scope to push workflow files over HTTPS.
+#
+# Option A: GitHub web UI — Create .github/workflows/ci.yml and paste this content.
+# Option B: PAT with workflow scope — git push after restoring this file to .github/workflows/ci.yml
+
 name: CI
 
 on:

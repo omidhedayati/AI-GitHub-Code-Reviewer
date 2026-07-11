@@ -136,6 +136,15 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+### GitHub Actions CI
+
+The CI workflow template lives at [`docs/ci-workflow.example.yml`](docs/ci-workflow.example.yml).
+
+GitHub blocks pushes of workflow files when your HTTPS token lacks the **workflow** scope. To enable CI:
+
+1. **GitHub web UI (easiest):** In your repo, create `.github/workflows/ci.yml` and paste the contents of `docs/ci-workflow.example.yml`.
+2. **Personal Access Token:** Create a [classic PAT](https://github.com/settings/tokens) with **repo** and **workflow** scopes, then push after copying the example file to `.github/workflows/ci.yml`.
+
 ## Environment Variables
 
 | Variable | Default | Description |
