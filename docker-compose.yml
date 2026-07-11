@@ -26,6 +26,7 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-reviewer}:${POSTGRES_PASSWORD:-reviewer}@postgres:5432/${POSTGRES_DB:-reviewer}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
     volumes:

@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.api.deps import get_db_session
 from app.db.base import Base
 from app.main import create_app
+from app.models.user import User  # noqa: F401
 
 
 @pytest.fixture
@@ -18,11 +19,15 @@ def test_client() -> TestClient:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    testing_session_local = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
     Base.metadata.create_all(bind=engine)
 
     def override_get_db():
-        db = TestingSessionLocal()
+        db = testing_session_local()
         try:
             yield db
         finally:
@@ -36,3 +41,22 @@ def test_client() -> TestClient:
         yield client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def registered_user(test_client: TestClient) -> dict[str, str]:
+    response = test_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "reviewer@example.com",
+            "password": "securepass123",
+            "full_name": "Test Reviewer",
+        },
+    )
+    assert response.status_code == 201
+    payload = response.json()
+    return {
+        "email": payload["user"]["email"],
+        "access_token": payload["tokens"]["access_token"],
+        "refresh_token": payload["tokens"]["refresh_token"],
+    }

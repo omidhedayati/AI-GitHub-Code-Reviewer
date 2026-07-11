@@ -6,7 +6,7 @@ A production-oriented web application for analyzing GitHub repositories and pull
 
 AI GitHub Code Reviewer helps developers inspect code quality across multiple languages, surface issues with severity and confidence scores, and generate structured review reports. The application stores review history in PostgreSQL and provides a modern dashboard for browsing results.
 
-**Current status:** Foundation skeleton (Step 1). Health checks, database wiring, and UI shells are in place. Authentication, repository analysis, and Ollama integration are on the roadmap.
+**Current status:** Foundation and JWT authentication (Step 2) are implemented. Repository analysis and Ollama integration are on the roadmap.
 
 ## Screenshots
 
@@ -174,6 +174,10 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 |--------|------|-------------|
 | `GET` | `/api/v1/health` | Liveness check |
 | `GET` | `/api/v1/ready` | Readiness check (includes database) |
+| `POST` | `/api/v1/auth/register` | Create account |
+| `POST` | `/api/v1/auth/login` | Sign in |
+| `POST` | `/api/v1/auth/refresh` | Refresh access token |
+| `GET` | `/api/v1/auth/me` | Current user (Bearer token required) |
 
 ## Project Structure
 
@@ -206,7 +210,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 
 ## Roadmap
 
-- [ ] JWT authentication (register, login, refresh tokens)
+- [x] JWT authentication (register, login, refresh tokens)
 - [ ] GitHub repository cloning and URL validation
 - [ ] Multi-language static analysis (Python, JS/TS, Java, Go, Rust, C#, C++)
 - [ ] Ollama-powered structured AI reviews
