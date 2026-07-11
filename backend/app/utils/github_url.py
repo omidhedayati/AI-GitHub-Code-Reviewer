@@ -46,9 +46,7 @@ def parse_github_repository(source: str) -> GitHubRepositoryRef:
     if "github.com" not in normalized.lower():
         parts = normalized.strip("/").split("/")
         if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise InvalidGitHubURLError(
-                "Provide a GitHub URL or owner/repository name"
-            )
+            raise InvalidGitHubURLError("Provide a GitHub URL or owner/repository name")
         owner = _validate_segment(parts[0], OWNER_PATTERN, "owner")
         repo = _validate_segment(
             parts[1].removesuffix(".git"),

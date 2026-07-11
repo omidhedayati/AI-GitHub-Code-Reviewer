@@ -5,6 +5,8 @@ import type {
   Repository,
   RepositoryCreateRequest,
   RepositoryListResponse,
+  Review,
+  ReviewListResponse,
   TokenResponse,
   User,
 } from "./types";
@@ -113,6 +115,25 @@ export const apiClient = {
   deleteRepository: (id: string) =>
     request<void>(`/api/v1/repositories/${id}`, {
       method: "DELETE",
+      auth: true,
+    }),
+
+  analyzeRepository: (id: string) =>
+    request<Review>(`/api/v1/repositories/${id}/analyze`, {
+      method: "POST",
+      auth: true,
+    }),
+
+  getLatestReview: (repositoryId: string) =>
+    request<Review>(`/api/v1/repositories/${repositoryId}/reviews/latest`, {
+      auth: true,
+    }),
+
+  getReview: (reviewId: string) =>
+    request<Review>(`/api/v1/reviews/${reviewId}`, { auth: true }),
+
+  listReviews: (repositoryId: string) =>
+    request<ReviewListResponse>(`/api/v1/repositories/${repositoryId}/reviews`, {
       auth: true,
     }),
 };

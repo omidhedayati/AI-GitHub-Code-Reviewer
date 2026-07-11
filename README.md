@@ -6,7 +6,7 @@ A production-oriented web application for analyzing GitHub repositories and pull
 
 AI GitHub Code Reviewer helps developers inspect code quality across multiple languages, surface issues with severity and confidence scores, and generate structured review reports. The application stores review history in PostgreSQL and provides a modern dashboard for browsing results.
 
-**Current status:** Foundation, JWT authentication, and GitHub repository cloning are implemented. Static analysis and Ollama integration are on the roadmap.
+**Current status:** Foundation, JWT authentication, GitHub cloning, and multi-language static analysis are implemented. Ollama AI review integration is on the roadmap.
 
 ## Screenshots
 
@@ -185,6 +185,10 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 | `POST` | `/api/v1/repositories` | Clone a GitHub repository |
 | `GET` | `/api/v1/repositories/{id}` | Repository details |
 | `DELETE` | `/api/v1/repositories/{id}` | Delete repository and workspace files |
+| `POST` | `/api/v1/repositories/{id}/analyze` | Run static analysis |
+| `GET` | `/api/v1/repositories/{id}/reviews` | List analysis runs |
+| `GET` | `/api/v1/repositories/{id}/reviews/latest` | Latest analysis run |
+| `GET` | `/api/v1/reviews/{id}` | Analysis run details |
 
 ## Project Structure
 
@@ -219,7 +223,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 
 - [x] JWT authentication (register, login, refresh tokens)
 - [x] GitHub repository cloning and URL validation
-- [ ] Multi-language static analysis (Python, JS/TS, Java, Go, Rust, C#, C++)
+- [x] Multi-language static analysis (Python, JS/TS, Java, Go, Rust, C#, C++)
 - [ ] Ollama-powered structured AI reviews
 - [ ] Markdown, JSON, and summary reports
 - [ ] Review history and search

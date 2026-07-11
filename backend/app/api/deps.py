@@ -9,7 +9,9 @@ from app.config.settings import Settings, get_settings
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.repository_repository import RepositoryRepository
+from app.repositories.review_repository import ReviewRepository
 from app.repositories.user_repository import UserRepository
+from app.services.analysis_service import AnalysisService
 from app.services.auth_service import AuthService, AuthServiceError
 from app.services.git_service import GitService
 from app.services.repository_service import RepositoryService
@@ -54,6 +56,20 @@ def get_repository_service(
     git_service: GitService = Depends(get_git_service),
 ) -> RepositoryService:
     return RepositoryService(repository_repository, git_service)
+
+
+def get_review_repository(
+    db: Session = Depends(get_db_session),
+) -> ReviewRepository:
+    return ReviewRepository(db)
+
+
+def get_analysis_service(
+    repository_repository: RepositoryRepository = Depends(get_repository_repository),
+    review_repository: ReviewRepository = Depends(get_review_repository),
+    settings: Settings = Depends(get_settings_dep),
+) -> AnalysisService:
+    return AnalysisService(repository_repository, review_repository, settings)
 
 
 def get_current_user(

@@ -52,3 +52,64 @@ export interface RepositoryCreateRequest {
   url: string;
   branch?: string;
 }
+
+export type ReviewStatus = "pending" | "running" | "completed" | "failed";
+
+export type IssueCategory =
+  | "bug"
+  | "duplicated_code"
+  | "long_method"
+  | "bad_naming"
+  | "security"
+  | "code_smell"
+  | "dead_code"
+  | "complexity"
+  | "missing_documentation"
+  | "unused_import";
+
+export type IssueSeverity = "critical" | "high" | "medium" | "low" | "info";
+
+export interface ReviewIssue {
+  id: string;
+  file_path: string;
+  line_start: number;
+  line_end: number | null;
+  category: IssueCategory;
+  severity: IssueSeverity;
+  confidence: number;
+  rule_id: string;
+  title: string;
+  explanation: string;
+  suggestion: string;
+}
+
+export interface FileAnalysisResult {
+  id: string;
+  file_path: string;
+  language: string;
+  line_count: number;
+  issues_count: number;
+  file_score: number;
+}
+
+export interface Review {
+  id: string;
+  repository_id: string;
+  user_id: string;
+  status: ReviewStatus;
+  files_analyzed: number;
+  issues_count: number;
+  overall_score: number;
+  summary: string | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  issues: ReviewIssue[];
+  file_results: FileAnalysisResult[];
+}
+
+export interface ReviewListResponse {
+  items: Review[];
+  total: number;
+}
