@@ -118,3 +118,26 @@ export interface ReviewListResponse {
   items: Review[];
   total: number;
 }
+
+export interface ReviewHistoryItem {
+  id: string;
+  repository_id: string;
+  repository_name: string;
+  review_type: ReviewType;
+  status: ReviewStatus;
+  overall_score: number;
+  issues_count: number;
+  files_analyzed: number;
+  summary: string | null;
+  ai_model: string | null;
+  created_at: string;
+}
+
+export interface ReviewSearchResponse {
+  items: ReviewHistoryItem[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export type ReportFormat = "markdown" | "json" | "summary";

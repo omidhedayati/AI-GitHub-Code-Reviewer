@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/Login";
 import { ProfilePage } from "./pages/Profile";
 import { RegisterPage } from "./pages/Register";
 import { RepositoryDetailsPage } from "./pages/RepositoryDetails";
+import { ReviewDetailPage } from "./pages/ReviewDetail";
 import { ReviewHistoryPage } from "./pages/ReviewHistory";
 import { SettingsPage } from "./pages/Settings";
 import {
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
           { path: "/history", element: <ReviewHistoryPage /> },
+          { path: "/reviews/:id", element: <ReviewDetailPage /> },
           { path: "/repositories/:id", element: <RepositoryDetailsPage /> },
           { path: "/settings", element: <SettingsPage /> },
           { path: "/profile", element: <ProfilePage /> },

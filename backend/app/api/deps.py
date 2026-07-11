@@ -17,6 +17,7 @@ from app.services.auth_service import AuthService, AuthServiceError
 from app.services.git_service import GitService
 from app.services.ollama_service import OllamaService
 from app.services.repository_service import RepositoryService
+from app.services.review_service import ReviewService
 from app.utils.security import decode_token
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -90,6 +91,13 @@ def get_ai_review_service(
         ollama_service,
         settings,
     )
+
+
+def get_review_service(
+    review_repository: ReviewRepository = Depends(get_review_repository),
+    repository_repository: RepositoryRepository = Depends(get_repository_repository),
+) -> ReviewService:
+    return ReviewService(review_repository, repository_repository)
 
 
 def get_current_user(

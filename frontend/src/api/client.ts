@@ -7,6 +7,8 @@ import type {
   RepositoryListResponse,
   Review,
   ReviewListResponse,
+  ReportFormat,
+  ReviewSearchResponse,
   TokenResponse,
   User,
 } from "./types";
@@ -156,6 +158,47 @@ export const apiClient = {
     request<ReviewListResponse>(`/api/v1/repositories/${repositoryId}/reviews`, {
       auth: true,
     }),
+
+  searchReviews: (params: {
+    q?: string;
+    review_type?: Review["review_type"];
+    severity?: string;
+    offset?: number;
+    limit?: number;
+  }) => {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.review_type) search.set("review_type", params.review_type);
+    if (params.severity) search.set("severity", params.severity);
+    if (params.offset !== undefined) search.set("offset", String(params.offset));
+    if (params.limit !== undefined) search.set("limit", String(params.limit));
+    const query = search.toString();
+    return request<ReviewSearchResponse>(
+      `/api/v1/reviews${query ? `?${query}` : ""}`,
+      { auth: true },
+    );
+  },
+
+  fetchReviewReport: async (
+    reviewId: string,
+    format: ReportFormat,
+    download = false,
+  ): Promise<string> => {
+    const search = new URLSearchParams({ format });
+    if (download) search.set("download", "true");
+    const token = accessTokenProvider?.() ?? getStoredAccessToken();
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/reviews/${reviewId}/report?${search.toString()}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    );
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { detail?: string };
+      throw new ApiError(body.detail ?? response.statusText, response.status);
+    }
+    return response.text();
+  },
 };
 
 export { API_BASE_URL };

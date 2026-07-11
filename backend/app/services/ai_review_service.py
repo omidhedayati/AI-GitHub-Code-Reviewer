@@ -24,6 +24,7 @@ from app.services.ollama_service import (
     OllamaService,
     OllamaUnavailableError,
 )
+from app.services.report_service import ReportService
 from app.utils.file_walker import detect_language, iter_analyzable_files
 from app.utils.scoring import calculate_file_score, calculate_overall_score
 
@@ -245,8 +246,9 @@ class AIReviewService:
             summary=summary,
             status=ReviewStatus.COMPLETED,
             ai_model=self._settings.ollama_model,
-            report_markdown=summary,
         )
+        updated.report_markdown = ReportService.build_markdown(updated, repository)
+        updated = self._reviews.update(updated)
         return ReviewResponse.model_validate(updated)
 
     def _truncate_with_line_numbers(self, content: str) -> str:

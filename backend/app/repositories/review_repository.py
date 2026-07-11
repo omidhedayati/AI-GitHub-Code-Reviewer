@@ -1,8 +1,10 @@
 import uuid
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.models.repository import Repository
 from app.models.review import (
     FileAnalysisResult,
     Review,
@@ -10,6 +12,7 @@ from app.models.review import (
     ReviewStatus,
     ReviewType,
 )
+from app.schemas.review_search import ReviewSearchParams, ReviewSearchSort
 from app.services.analyzers.base import AnalysisIssue
 
 
@@ -99,6 +102,85 @@ class ReviewRepository:
             .order_by(Review.created_at.desc())
         )
         return list(self._db.scalars(statement).all())
+
+    def search_for_user(
+        self,
+        user_id: uuid.UUID,
+        params: ReviewSearchParams,
+    ) -> tuple[list[tuple[Review, Repository]], int]:
+        id_query = (
+            select(Review.id)
+            .join(Repository, Review.repository_id == Repository.id)
+            .where(Review.user_id == user_id)
+        )
+        id_query = self._apply_search_filters(id_query, params)
+        total = (
+            self._db.scalar(
+                select(func.count()).select_from(id_query.distinct().subquery())
+            )
+            or 0
+        )
+
+        fetch = (
+            select(Review, Repository)
+            .join(Repository, Review.repository_id == Repository.id)
+            .where(Review.user_id == user_id)
+        )
+        fetch = self._apply_search_filters(fetch, params)
+        fetch = fetch.distinct()
+        fetch = self._apply_search_sort(fetch, params.sort)
+        fetch = fetch.offset(params.offset).limit(params.limit)
+        rows = list(self._db.execute(fetch).all())
+        return [(review, repository) for review, repository in rows], total
+
+    def _apply_search_filters(self, statement: Any, params: ReviewSearchParams) -> Any:
+        if params.repository_id is not None:
+            statement = statement.where(Review.repository_id == params.repository_id)
+        if params.review_type is not None:
+            statement = statement.where(Review.review_type == params.review_type.value)
+        if params.status is not None:
+            statement = statement.where(Review.status == params.status.value)
+        if params.min_score is not None:
+            statement = statement.where(Review.overall_score >= params.min_score)
+        if params.max_score is not None:
+            statement = statement.where(Review.overall_score <= params.max_score)
+        if params.from_date is not None:
+            statement = statement.where(Review.created_at >= params.from_date)
+        if params.to_date is not None:
+            statement = statement.where(Review.created_at <= params.to_date)
+        if params.severity is not None:
+            statement = statement.where(
+                Review.issues.any(ReviewIssue.severity == params.severity)
+            )
+        if params.q:
+            pattern = f"%{params.q.strip()}%"
+            statement = statement.where(
+                or_(
+                    Review.summary.ilike(pattern),
+                    Review.report_markdown.ilike(pattern),
+                    Repository.owner.ilike(pattern),
+                    Repository.name.ilike(pattern),
+                    Review.issues.any(
+                        or_(
+                            ReviewIssue.title.ilike(pattern),
+                            ReviewIssue.explanation.ilike(pattern),
+                            ReviewIssue.file_path.ilike(pattern),
+                        )
+                    ),
+                )
+            )
+        return statement
+
+    def _apply_search_sort(self, statement: Any, sort: ReviewSearchSort) -> Any:
+        mapping = {
+            ReviewSearchSort.CREATED_DESC: Review.created_at.desc(),
+            ReviewSearchSort.CREATED_ASC: Review.created_at.asc(),
+            ReviewSearchSort.SCORE_DESC: Review.overall_score.desc(),
+            ReviewSearchSort.SCORE_ASC: Review.overall_score.asc(),
+            ReviewSearchSort.ISSUES_DESC: Review.issues_count.desc(),
+            ReviewSearchSort.ISSUES_ASC: Review.issues_count.asc(),
+        }
+        return statement.order_by(mapping[sort])
 
     def save_results(
         self,

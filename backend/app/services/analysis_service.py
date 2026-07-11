@@ -12,6 +12,7 @@ from app.schemas.analysis import ReviewResponse
 from app.services.analyzers.base import AnalysisIssue
 from app.services.analyzers.common import detect_duplicated_blocks
 from app.services.analyzers.registry import analyze_file
+from app.services.report_service import ReportService
 from app.utils.file_walker import detect_language, iter_analyzable_files
 from app.utils.scoring import calculate_file_score, calculate_overall_score
 
@@ -190,4 +191,6 @@ class AnalysisService:
             summary=summary,
             status=ReviewStatus.COMPLETED,
         )
+        updated.report_markdown = ReportService.build_markdown(updated, repository)
+        updated = self._reviews.update(updated)
         return ReviewResponse.model_validate(updated)
