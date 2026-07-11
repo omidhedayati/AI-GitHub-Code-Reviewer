@@ -8,8 +8,11 @@ from sqlalchemy.orm import Session
 from app.config.settings import Settings, get_settings
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.repository_repository import RepositoryRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService, AuthServiceError
+from app.services.git_service import GitService
+from app.services.repository_service import RepositoryService
 from app.utils.security import decode_token
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -34,6 +37,23 @@ def get_auth_service(
     settings: Settings = Depends(get_settings_dep),
 ) -> AuthService:
     return AuthService(user_repository, settings)
+
+
+def get_repository_repository(
+    db: Session = Depends(get_db_session),
+) -> RepositoryRepository:
+    return RepositoryRepository(db)
+
+
+def get_git_service(settings: Settings = Depends(get_settings_dep)) -> GitService:
+    return GitService(settings)
+
+
+def get_repository_service(
+    repository_repository: RepositoryRepository = Depends(get_repository_repository),
+    git_service: GitService = Depends(get_git_service),
+) -> RepositoryService:
+    return RepositoryService(repository_repository, git_service)
 
 
 def get_current_user(

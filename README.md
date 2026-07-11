@@ -6,7 +6,7 @@ A production-oriented web application for analyzing GitHub repositories and pull
 
 AI GitHub Code Reviewer helps developers inspect code quality across multiple languages, surface issues with severity and confidence scores, and generate structured review reports. The application stores review history in PostgreSQL and provides a modern dashboard for browsing results.
 
-**Current status:** Foundation and JWT authentication (Step 2) are implemented. Repository analysis and Ollama integration are on the roadmap.
+**Current status:** Foundation, JWT authentication, and GitHub repository cloning are implemented. Static analysis and Ollama integration are on the roadmap.
 
 ## Screenshots
 
@@ -161,6 +161,9 @@ GitHub blocks pushes of workflow files when your HTTPS token lacks the **workflo
 | `OLLAMA_BASE_URL` | `http://host.docker.internal:11434` | Ollama API endpoint |
 | `OLLAMA_MODEL` | `qwen2.5` | Default LLM model |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | Frontend API base URL |
+| `REPOS_WORKSPACE_ROOT` | `./.repos` | Local path for cloned repositories |
+| `GIT_CLONE_DEPTH` | `1` | Shallow clone depth |
+| `GIT_CLONE_TIMEOUT_SECONDS` | `300` | Git clone timeout |
 
 Copy `.env.example` to `.env` and adjust values for your environment.
 
@@ -178,6 +181,10 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 | `POST` | `/api/v1/auth/login` | Sign in |
 | `POST` | `/api/v1/auth/refresh` | Refresh access token |
 | `GET` | `/api/v1/auth/me` | Current user (Bearer token required) |
+| `GET` | `/api/v1/repositories` | List cloned repositories |
+| `POST` | `/api/v1/repositories` | Clone a GitHub repository |
+| `GET` | `/api/v1/repositories/{id}` | Repository details |
+| `DELETE` | `/api/v1/repositories/{id}` | Delete repository and workspace files |
 
 ## Project Structure
 
@@ -211,7 +218,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 ## Roadmap
 
 - [x] JWT authentication (register, login, refresh tokens)
-- [ ] GitHub repository cloning and URL validation
+- [x] GitHub repository cloning and URL validation
 - [ ] Multi-language static analysis (Python, JS/TS, Java, Go, Rust, C#, C++)
 - [ ] Ollama-powered structured AI reviews
 - [ ] Markdown, JSON, and summary reports

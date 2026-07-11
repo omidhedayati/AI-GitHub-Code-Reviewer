@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.api.deps import get_db_session
 from app.db.base import Base
 from app.main import create_app
+from app.models.repository import Repository  # noqa: F401
 from app.models.user import User  # noqa: F401
 
 

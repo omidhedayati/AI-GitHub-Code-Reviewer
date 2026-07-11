@@ -2,6 +2,9 @@ import type {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
+  Repository,
+  RepositoryCreateRequest,
+  RepositoryListResponse,
   TokenResponse,
   User,
 } from "./types";
@@ -93,6 +96,25 @@ export const apiClient = {
     }),
 
   getMe: () => request<User>("/api/v1/auth/me", { auth: true }),
+
+  listRepositories: () =>
+    request<RepositoryListResponse>("/api/v1/repositories", { auth: true }),
+
+  cloneRepository: (data: RepositoryCreateRequest) =>
+    request<Repository>("/api/v1/repositories", {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(data),
+    }),
+
+  getRepository: (id: string) =>
+    request<Repository>(`/api/v1/repositories/${id}`, { auth: true }),
+
+  deleteRepository: (id: string) =>
+    request<void>(`/api/v1/repositories/${id}`, {
+      method: "DELETE",
+      auth: true,
+    }),
 };
 
 export { API_BASE_URL };

@@ -58,6 +58,16 @@ class Settings(BaseSettings):
         alias="IGNORED_EXTENSIONS",
     )
 
+    repos_workspace_root: str = Field(
+        default="./.repos",
+        alias="REPOS_WORKSPACE_ROOT",
+    )
+    git_clone_depth: int = Field(default=1, alias="GIT_CLONE_DEPTH")
+    git_clone_timeout_seconds: int = Field(
+        default=300,
+        alias="GIT_CLONE_TIMEOUT_SECONDS",
+    )
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [

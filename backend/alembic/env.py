@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.config.settings import get_settings
 from app.db.base import Base
-from app.models import User  # noqa: F401 — register models for Alembic
+from app.models import Repository, User  # noqa: F401 — register models for Alembic
 
 config = context.config
 
