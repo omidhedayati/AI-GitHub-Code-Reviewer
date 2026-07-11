@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.config.analysis_config import AnalysisConfig
 from app.config.settings import Settings
 from app.models.repository import Repository, RepositoryStatus
 from app.models.review import FileAnalysisResult, ReviewStatus, ReviewType
@@ -13,6 +14,7 @@ from app.services.analyzers.base import AnalysisIssue
 from app.services.analyzers.common import detect_duplicated_blocks
 from app.services.analyzers.registry import analyze_file
 from app.services.report_service import ReportService
+from app.services.user_settings_service import UserSettingsService
 from app.utils.file_walker import detect_language, iter_analyzable_files
 from app.utils.scoring import calculate_file_score, calculate_overall_score
 
@@ -39,10 +41,11 @@ class AnalysisService:
         repository_repository: RepositoryRepository,
         review_repository: ReviewRepository,
         settings: Settings,
+        user_settings_service: UserSettingsService,
     ) -> None:
         self._repositories = repository_repository
         self._reviews = review_repository
-        self._settings = settings
+        self._user_settings = user_settings_service
 
     def analyze_repository(
         self,
@@ -72,7 +75,8 @@ class AnalysisService:
         self._reviews.update(review)
 
         try:
-            return self._run_analysis(repository, root, review.id, user.id)
+            config = self._user_settings.get_analysis_config(user.id)
+            return self._run_analysis(repository, root, review.id, user.id, config)
         except Exception as exc:
             review.status = ReviewStatus.FAILED.value
             review.error_message = "Analysis failed unexpectedly"
@@ -120,8 +124,9 @@ class AnalysisService:
         root: Path,
         review_id: uuid.UUID,
         user_id: uuid.UUID,
+        config: AnalysisConfig,
     ) -> ReviewResponse:
-        files = iter_analyzable_files(root, self._settings)
+        files = iter_analyzable_files(root, config)
         all_issues: list[AnalysisIssue] = []
         file_contents: dict[str, str] = {}
         file_results: list[FileAnalysisResult] = []

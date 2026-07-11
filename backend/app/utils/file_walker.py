@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.config.settings import Settings
+from app.config.analysis_config import AnalysisConfig
 
 SUPPORTED_EXTENSIONS: dict[str, str] = {
     ".py": "python",
@@ -28,7 +28,7 @@ def detect_language(file_path: Path) -> str | None:
 def should_analyze_file(
     file_path: Path,
     repository_root: Path,
-    settings: Settings,
+    settings: AnalysisConfig,
 ) -> bool:
     if not file_path.is_file():
         return False
@@ -59,7 +59,7 @@ def should_analyze_file(
 
 def iter_analyzable_files(
     repository_root: Path,
-    settings: Settings,
+    settings: AnalysisConfig,
 ) -> list[Path]:
     files: list[Path] = []
     for path in repository_root.rglob("*"):

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import httpx
 
-from app.config.settings import Settings
+from app.config.analysis_config import AnalysisConfig
 
 
 class OllamaServiceError(Exception):
@@ -36,13 +36,13 @@ class OllamaHealthStatus:
 class OllamaService:
     """HTTP client for the local Ollama API."""
 
-    def __init__(self, settings: Settings) -> None:
-        self._settings = settings
-        self._base_url = settings.ollama_base_url.rstrip("/")
-        self._timeout = settings.ollama_timeout_seconds
+    def __init__(self, config: AnalysisConfig) -> None:
+        self._config = config
+        self._base_url = config.ollama_base_url.rstrip("/")
+        self._timeout = config.ollama_timeout_seconds
 
     def check_health(self) -> OllamaHealthStatus:
-        model = self._settings.ollama_model
+        model = self._config.ollama_model
         try:
             with httpx.Client(timeout=self._timeout) as client:
                 response = client.get(f"{self._base_url}/api/tags")
@@ -92,14 +92,14 @@ class OllamaService:
             raise OllamaUnavailableError(health.message)
 
         body = {
-            "model": self._settings.ollama_model,
+            "model": self._config.ollama_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
             "format": "json",
             "stream": False,
-            "options": {"temperature": self._settings.ai_temperature},
+            "options": {"temperature": self._config.ai_temperature},
         }
 
         try:

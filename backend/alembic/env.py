@@ -11,6 +11,7 @@ from app.models import (  # noqa: F401
     Review,
     ReviewIssue,
     User,
+    UserSettings,
 )
 
 config = context.config

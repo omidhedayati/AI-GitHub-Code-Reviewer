@@ -141,3 +141,40 @@ export interface ReviewSearchResponse {
 }
 
 export type ReportFormat = "markdown" | "json" | "summary";
+
+export interface OllamaHealthResponse {
+  status: string;
+  model: string;
+  models_available: string[];
+  base_url: string;
+  message?: string;
+}
+
+export interface UserSettingsOverrides {
+  ollama_base_url: string | null;
+  ollama_model: string | null;
+  ignored_folders: string | null;
+  ignored_extensions: string | null;
+  max_file_size_bytes: number | null;
+}
+
+export interface EffectiveUserSettings {
+  ollama_base_url: string;
+  ollama_model: string;
+  ignored_folders: string;
+  ignored_extensions: string;
+  max_file_size_bytes: number;
+}
+
+export interface UserSettingsResponse {
+  overrides: UserSettingsOverrides;
+  effective: EffectiveUserSettings;
+}
+
+export interface UserSettingsUpdate {
+  ollama_base_url?: string | null;
+  ollama_model?: string | null;
+  ignored_folders?: string | null;
+  ignored_extensions?: string | null;
+  max_file_size_bytes?: number | null;
+}

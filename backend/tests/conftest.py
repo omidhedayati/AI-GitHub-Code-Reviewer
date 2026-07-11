@@ -15,6 +15,7 @@ from app.main import create_app
 from app.models.repository import Repository  # noqa: F401
 from app.models.review import FileAnalysisResult, Review, ReviewIssue  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.models.user_settings import UserSettings  # noqa: F401
 from app.utils.github_url import GitHubRepositoryRef
 
 

@@ -7,10 +7,13 @@ import type {
   RepositoryListResponse,
   Review,
   ReviewListResponse,
+  OllamaHealthResponse,
   ReportFormat,
   ReviewSearchResponse,
   TokenResponse,
   User,
+  UserSettingsResponse,
+  UserSettingsUpdate,
 } from "./types";
 
 const API_BASE_URL =
@@ -78,17 +81,24 @@ export interface HealthResponse {
   status: string;
 }
 
-export interface OllamaHealthResponse {
-  status: string;
-  model: string;
-  models_available: string[];
-  base_url: string;
-}
-
 export const apiClient = {
   getHealth: () => request<HealthResponse>("/api/v1/health"),
 
   getOllamaHealth: () => request<OllamaHealthResponse>("/api/v1/health/ollama"),
+
+  getMySettings: () => request<UserSettingsResponse>("/api/v1/settings/me", { auth: true }),
+
+  updateMySettings: (data: UserSettingsUpdate) =>
+    request<UserSettingsResponse>("/api/v1/settings/me", {
+      method: "PUT",
+      auth: true,
+      body: JSON.stringify(data),
+    }),
+
+  getMyOllamaHealth: () =>
+    request<OllamaHealthResponse>("/api/v1/settings/me/ollama-health", {
+      auth: true,
+    }),
 
   register: (data: RegisterRequest) =>
     request<AuthResponse>("/api/v1/auth/register", {

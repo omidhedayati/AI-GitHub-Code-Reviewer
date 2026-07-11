@@ -35,8 +35,8 @@ export function RepositoryDetailsPage() {
   });
 
   const { data: ollamaHealth } = useQuery({
-    queryKey: ["ollama-health"],
-    queryFn: apiClient.getOllamaHealth,
+    queryKey: ["ollama-health", "me"],
+    queryFn: apiClient.getMyOllamaHealth,
     enabled: data?.status === "ready",
     retry: false,
   });

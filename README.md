@@ -6,7 +6,7 @@ A production-oriented web application for analyzing GitHub repositories and pull
 
 AI GitHub Code Reviewer helps developers inspect code quality across multiple languages, surface issues with severity and confidence scores, and generate structured review reports. The application stores review history in PostgreSQL and provides a modern dashboard for browsing results.
 
-**Current status:** Foundation, JWT authentication, GitHub cloning, static analysis, Ollama AI reviews, and report export with review search are implemented. User settings UI is on the roadmap.
+**Current status:** Foundation, JWT authentication, GitHub cloning, static analysis, Ollama AI reviews, report export, review search, and per-user settings are implemented.
 
 ## Screenshots
 
@@ -202,7 +202,10 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 | `GET` | `/api/v1/reviews` | Search review history (`q`, filters, pagination) |
 | `GET` | `/api/v1/reviews/{id}` | Analysis run details |
 | `GET` | `/api/v1/reviews/{id}/report` | Export report (`format=markdown\|json\|summary`) |
-| `GET` | `/api/v1/health/ollama` | Ollama connectivity and model status |
+| `GET` | `/api/v1/settings/me` | Current user settings |
+| `PUT` | `/api/v1/settings/me` | Update user settings |
+| `GET` | `/api/v1/settings/me/ollama-health` | Ollama status using user settings |
+| `GET` | `/api/v1/health/ollama` | Global Ollama status (app defaults) |
 
 ## Project Structure
 
@@ -241,7 +244,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 - [x] Ollama-powered structured AI reviews
 - [x] Markdown, JSON, and summary reports
 - [x] Review history and search
-- [ ] User settings (Ollama endpoint, model, ignored paths)
+- [x] User settings (Ollama endpoint, model, ignored paths)
 - [ ] GitHub OAuth
 - [ ] Pull request reviews
 - [ ] Webhooks and team collaboration

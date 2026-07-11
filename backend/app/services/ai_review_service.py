@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from app.config.analysis_config import AnalysisConfig
 from app.config.settings import Settings
 from app.models.repository import Repository, RepositoryStatus
 from app.models.review import FileAnalysisResult, Review, ReviewStatus, ReviewType
@@ -25,6 +26,7 @@ from app.services.ollama_service import (
     OllamaUnavailableError,
 )
 from app.services.report_service import ReportService
+from app.services.user_settings_service import UserSettingsService
 from app.utils.file_walker import detect_language, iter_analyzable_files
 from app.utils.scoring import calculate_file_score, calculate_overall_score
 
@@ -76,13 +78,21 @@ class AIReviewService:
         self,
         repository_repository: RepositoryRepository,
         review_repository: ReviewRepository,
-        ollama_service: OllamaService,
+        user_settings_service: UserSettingsService,
         settings: Settings,
+        ollama_service: OllamaService | None = None,
     ) -> None:
         self._repositories = repository_repository
         self._reviews = review_repository
-        self._ollama = ollama_service
+        self._user_settings = user_settings_service
         self._settings = settings
+        self._ollama_override = ollama_service
+
+    def _ollama_for_user(self, user_id: uuid.UUID) -> OllamaService:
+        if self._ollama_override is not None:
+            return self._ollama_override
+        config = self._user_settings.get_analysis_config(user_id)
+        return OllamaService(config)
 
     def run_ai_review(
         self,
@@ -102,10 +112,11 @@ class AIReviewService:
         if not root.exists():
             raise RepositoryNotReadyError("Repository files are unavailable on disk")
 
-        health = self._ollama.check_health()
+        health = self._ollama_for_user(user.id).check_health()
         if not health.available:
             raise OllamaNotReadyError(health.message)
 
+        config = self._user_settings.get_analysis_config(user.id)
         review = self._reviews.create(
             repository_id=repository.id,
             user_id=user.id,
@@ -113,11 +124,11 @@ class AIReviewService:
             review_type=ReviewType.AI,
         )
         review.started_at = datetime.now(UTC)
-        review.ai_model = self._settings.ollama_model
+        review.ai_model = config.ollama_model
         self._reviews.update(review)
 
         try:
-            return self._run_ai_review(repository, root, review.id, user.id)
+            return self._run_ai_review(repository, root, review.id, user.id, config)
         except (OllamaUnavailableError, OllamaModelNotFoundError) as exc:
             self._fail_review(review, str(exc))
             raise OllamaNotReadyError(exc.message) from exc
@@ -174,10 +185,10 @@ class AIReviewService:
         root: Path,
         review_id: uuid.UUID,
         user_id: uuid.UUID,
+        config: AnalysisConfig,
     ) -> ReviewResponse:
-        files = iter_analyzable_files(root, self._settings)[
-            : self._settings.ai_max_files
-        ]
+        ollama = self._ollama_for_user(user_id)
+        files = iter_analyzable_files(root, config)[: config.ai_max_files]
         if not files:
             raise AIReviewServiceError("No analyzable source files found")
 
@@ -191,7 +202,7 @@ class AIReviewService:
             except UnicodeDecodeError:
                 content = file_path.read_text(encoding="utf-8", errors="replace")
 
-            snippet = self._truncate_with_line_numbers(content)
+            snippet = self._truncate_with_line_numbers(content, config)
             file_snippets.append((relative_path, snippet))
 
             language = detect_language(file_path) or "unknown"
@@ -210,7 +221,7 @@ class AIReviewService:
             f"{repository.owner}/{repository.name}",
             file_snippets,
         )
-        raw_json = self._ollama.generate_json(
+        raw_json = ollama.generate_json(
             system_prompt=AI_REVIEW_SYSTEM_PROMPT,
             user_prompt=prompt,
         )
@@ -245,14 +256,16 @@ class AIReviewService:
             overall_score=overall_score,
             summary=summary,
             status=ReviewStatus.COMPLETED,
-            ai_model=self._settings.ollama_model,
+            ai_model=config.ollama_model,
         )
         updated.report_markdown = ReportService.build_markdown(updated, repository)
         updated = self._reviews.update(updated)
         return ReviewResponse.model_validate(updated)
 
-    def _truncate_with_line_numbers(self, content: str) -> str:
-        max_chars = self._settings.ai_max_chars_per_file
+    def _truncate_with_line_numbers(
+        self, content: str, config: AnalysisConfig
+    ) -> str:
+        max_chars = config.ai_max_chars_per_file
         lines = content.splitlines()
         numbered: list[str] = []
         total_chars = 0

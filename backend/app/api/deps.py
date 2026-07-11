@@ -11,6 +11,7 @@ from app.models.user import User
 from app.repositories.repository_repository import RepositoryRepository
 from app.repositories.review_repository import ReviewRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.user_settings_repository import UserSettingsRepository
 from app.services.ai_review_service import AIReviewService
 from app.services.analysis_service import AnalysisService
 from app.services.auth_service import AuthService, AuthServiceError
@@ -18,6 +19,7 @@ from app.services.git_service import GitService
 from app.services.ollama_service import OllamaService
 from app.services.repository_service import RepositoryService
 from app.services.review_service import ReviewService
+from app.services.user_settings_service import UserSettingsService
 from app.utils.security import decode_token
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -67,28 +69,48 @@ def get_review_repository(
     return ReviewRepository(db)
 
 
+def get_user_settings_repository(
+    db: Session = Depends(get_db_session),
+) -> UserSettingsRepository:
+    return UserSettingsRepository(db)
+
+
+def get_user_settings_service(
+    repository: UserSettingsRepository = Depends(get_user_settings_repository),
+    settings: Settings = Depends(get_settings_dep),
+) -> UserSettingsService:
+    return UserSettingsService(repository, settings)
+
+
 def get_analysis_service(
     repository_repository: RepositoryRepository = Depends(get_repository_repository),
     review_repository: ReviewRepository = Depends(get_review_repository),
-    settings: Settings = Depends(get_settings_dep),
+    user_settings_service: UserSettingsService = Depends(get_user_settings_service),
 ) -> AnalysisService:
-    return AnalysisService(repository_repository, review_repository, settings)
+    return AnalysisService(
+        repository_repository,
+        review_repository,
+        get_settings(),
+        user_settings_service,
+    )
 
 
 def get_ollama_service(settings: Settings = Depends(get_settings_dep)) -> OllamaService:
-    return OllamaService(settings)
+    from app.config.analysis_config import AnalysisConfig
+
+    return OllamaService(AnalysisConfig.from_app_settings(settings))
 
 
 def get_ai_review_service(
     repository_repository: RepositoryRepository = Depends(get_repository_repository),
     review_repository: ReviewRepository = Depends(get_review_repository),
-    ollama_service: OllamaService = Depends(get_ollama_service),
+    user_settings_service: UserSettingsService = Depends(get_user_settings_service),
     settings: Settings = Depends(get_settings_dep),
 ) -> AIReviewService:
     return AIReviewService(
         repository_repository,
         review_repository,
-        ollama_service,
+        user_settings_service,
         settings,
     )
 

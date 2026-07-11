@@ -4,17 +4,23 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
+from app.config.analysis_config import AnalysisConfig
 from app.config.settings import Settings
 from app.services.ollama_service import OllamaService, OllamaUnavailableError
 
 
-def test_generate_json_success() -> None:
-    settings = Settings(
-        OLLAMA_BASE_URL="http://ollama.test",
-        OLLAMA_MODEL="qwen2.5",
-        OLLAMA_TIMEOUT_SECONDS=5,
+def _config() -> AnalysisConfig:
+    return AnalysisConfig.from_app_settings(
+        Settings(
+            OLLAMA_BASE_URL="http://ollama.test",
+            OLLAMA_MODEL="qwen2.5",
+            OLLAMA_TIMEOUT_SECONDS=5,
+        )
     )
-    service = OllamaService(settings)
+
+
+def test_generate_json_success() -> None:
+    service = OllamaService(_config())
 
     tags_response = MagicMock()
     tags_response.raise_for_status = MagicMock()
@@ -42,12 +48,7 @@ def test_generate_json_success() -> None:
 
 
 def test_check_health_unreachable() -> None:
-    settings = Settings(
-        OLLAMA_BASE_URL="http://ollama.test",
-        OLLAMA_MODEL="qwen2.5",
-        OLLAMA_TIMEOUT_SECONDS=5,
-    )
-    service = OllamaService(settings)
+    service = OllamaService(_config())
 
     mock_client = MagicMock()
     mock_client.__enter__ = MagicMock(return_value=mock_client)
@@ -61,12 +62,7 @@ def test_check_health_unreachable() -> None:
 
 
 def test_generate_json_unreachable() -> None:
-    settings = Settings(
-        OLLAMA_BASE_URL="http://ollama.test",
-        OLLAMA_MODEL="qwen2.5",
-        OLLAMA_TIMEOUT_SECONDS=5,
-    )
-    service = OllamaService(settings)
+    service = OllamaService(_config())
 
     mock_client = MagicMock()
     mock_client.__enter__ = MagicMock(return_value=mock_client)

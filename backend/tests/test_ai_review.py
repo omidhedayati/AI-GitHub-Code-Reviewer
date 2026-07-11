@@ -6,8 +6,14 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_ollama_service
+from app.api.deps import get_ai_review_service
+from app.config.settings import get_settings
 from app.models.repository import Repository, RepositoryStatus
+from app.repositories.repository_repository import RepositoryRepository
+from app.repositories.review_repository import ReviewRepository
+from app.repositories.user_settings_repository import UserSettingsRepository
+from app.services.ai_review_service import AIReviewService
+from app.services.user_settings_service import UserSettingsService
 
 MOCK_AI_RESPONSE = json.dumps(
     {
@@ -49,12 +55,21 @@ def mock_ollama_service() -> MagicMock:
 def ai_client(
     authed_client: TestClient,
     mock_ollama_service: MagicMock,
+    db_session,
 ) -> TestClient:
-    authed_client.app.dependency_overrides[get_ollama_service] = (
-        lambda: mock_ollama_service
+    settings = get_settings()
+    ai_review_service = AIReviewService(
+        RepositoryRepository(db_session),
+        ReviewRepository(db_session),
+        UserSettingsService(UserSettingsRepository(db_session), settings),
+        settings,
+        ollama_service=mock_ollama_service,
+    )
+    authed_client.app.dependency_overrides[get_ai_review_service] = (
+        lambda: ai_review_service
     )
     yield authed_client
-    authed_client.app.dependency_overrides.pop(get_ollama_service, None)
+    authed_client.app.dependency_overrides.pop(get_ai_review_service, None)
 
 
 @pytest.fixture
@@ -147,10 +162,16 @@ def test_ai_review_ollama_unavailable(
 
 
 def test_ollama_health_endpoint(
-    ai_client: TestClient,
+    authed_client: TestClient,
     mock_ollama_service: MagicMock,
 ) -> None:
-    response = ai_client.get("/api/v1/health/ollama")
+    from app.api.deps import get_ollama_service
+
+    authed_client.app.dependency_overrides[get_ollama_service] = (
+        lambda: mock_ollama_service
+    )
+    response = authed_client.get("/api/v1/health/ollama")
+    authed_client.app.dependency_overrides.pop(get_ollama_service, None)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "available"
