@@ -4,6 +4,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { AuthProvider } from "./context/AuthContext";
 import { DashboardPage } from "./pages/Dashboard";
+import { GitHubCallbackPage } from "./pages/GitHubCallback";
 import { LoginPage } from "./pages/Login";
 import { ProfilePage } from "./pages/Profile";
 import { RegisterPage } from "./pages/Register";
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <RootRedirect />,
+  },
+  {
+    path: "/auth/github/callback",
+    element: <GitHubCallbackPage />,
   },
   {
     element: <PublicOnlyRoute />,

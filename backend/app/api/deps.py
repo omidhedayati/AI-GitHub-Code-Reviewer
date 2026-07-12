@@ -16,6 +16,7 @@ from app.services.ai_review_service import AIReviewService
 from app.services.analysis_service import AnalysisService
 from app.services.auth_service import AuthService, AuthServiceError
 from app.services.git_service import GitService
+from app.services.github_oauth_service import GitHubOAuthService
 from app.services.ollama_service import OllamaService
 from app.services.repository_service import RepositoryService
 from app.services.review_service import ReviewService
@@ -50,6 +51,12 @@ def get_repository_repository(
     db: Session = Depends(get_db_session),
 ) -> RepositoryRepository:
     return RepositoryRepository(db)
+
+
+def get_github_oauth_service(
+    settings: Settings = Depends(get_settings_dep),
+) -> GitHubOAuthService:
+    return GitHubOAuthService(settings)
 
 
 def get_git_service(settings: Settings = Depends(get_settings_dep)) -> GitService:

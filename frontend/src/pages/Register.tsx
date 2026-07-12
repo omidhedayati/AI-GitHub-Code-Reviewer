@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
+import { GitHubSignInButton } from "../components/auth/GitHubSignInButton";
 import { useAuth } from "../hooks/useAuth";
 
 export function RegisterPage() {
@@ -113,6 +114,19 @@ export function RegisterPage() {
             {isSubmitting ? "Creating account..." : "Create account"}
           </button>
         </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+              Or
+            </span>
+          </div>
+        </div>
+
+        <GitHubSignInButton />
 
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{" "}

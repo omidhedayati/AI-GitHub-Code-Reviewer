@@ -1,5 +1,6 @@
 import type {
   AuthResponse,
+  GitHubExchangeRequest,
   LoginRequest,
   RegisterRequest,
   Repository,
@@ -108,6 +109,12 @@ export const apiClient = {
 
   login: (data: LoginRequest) =>
     request<AuthResponse>("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  exchangeGitHubCode: (data: GitHubExchangeRequest) =>
+    request<AuthResponse>("/api/v1/auth/github/exchange", {
       method: "POST",
       body: JSON.stringify(data),
     }),

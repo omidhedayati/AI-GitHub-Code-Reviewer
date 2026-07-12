@@ -171,11 +171,26 @@ GitHub blocks pushes of workflow files when your HTTPS token lacks the **workflo
 | `AI_MAX_CHARS_PER_FILE` | `4000` | Max characters per file in AI prompts |
 | `AI_TEMPERATURE` | `0.2` | LLM sampling temperature |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | Frontend API base URL |
+| `GITHUB_CLIENT_ID` | — | GitHub OAuth App client ID |
+| `GITHUB_CLIENT_SECRET` | — | GitHub OAuth App client secret |
+| `GITHUB_OAUTH_REDIRECT_URI` | `http://localhost:8000/api/v1/auth/github/callback` | OAuth callback URL registered with GitHub |
+| `GITHUB_OAUTH_SCOPES` | `read:user user:email` | GitHub OAuth scopes |
+| `FRONTEND_URL` | `http://localhost:5173` | Frontend base URL for post-login redirects |
 | `REPOS_WORKSPACE_ROOT` | `./.repos` | Local path for cloned repositories |
 | `GIT_CLONE_DEPTH` | `1` | Shallow clone depth |
 | `GIT_CLONE_TIMEOUT_SECONDS` | `300` | Git clone timeout |
 
 Copy `.env.example` to `.env` and adjust values for your environment.
+
+### GitHub OAuth setup
+
+1. Create a [GitHub OAuth App](https://github.com/settings/developers) (OAuth Apps, not GitHub Apps).
+2. Set **Authorization callback URL** to `http://localhost:8000/api/v1/auth/github/callback` (or your deployed backend callback URL).
+3. Copy the **Client ID** and generate a **Client secret** into `.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`.
+4. Ensure `FRONTEND_URL` matches where the React app is served (default `http://localhost:5173`).
+5. Restart the backend after updating environment variables.
+
+Sign-in flow: the frontend redirects to `/api/v1/auth/github/login`, GitHub returns to the backend callback, and the backend redirects to the frontend with a short-lived exchange code that is swapped for JWT tokens via `POST /api/v1/auth/github/exchange`.
 
 ## API Documentation
 
@@ -189,6 +204,9 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 | `GET` | `/api/v1/ready` | Readiness check (includes database) |
 | `POST` | `/api/v1/auth/register` | Create account |
 | `POST` | `/api/v1/auth/login` | Sign in |
+| `GET` | `/api/v1/auth/github/login` | Start GitHub OAuth (redirect) |
+| `GET` | `/api/v1/auth/github/callback` | GitHub OAuth callback (redirect) |
+| `POST` | `/api/v1/auth/github/exchange` | Exchange OAuth code for JWT tokens |
 | `POST` | `/api/v1/auth/refresh` | Refresh access token |
 | `GET` | `/api/v1/auth/me` | Current user (Bearer token required) |
 | `GET` | `/api/v1/repositories` | List cloned repositories |
@@ -245,7 +263,7 @@ Interactive Swagger UI is available at `/docs` when the backend is running.
 - [x] Markdown, JSON, and summary reports
 - [x] Review history and search
 - [x] User settings (Ollama endpoint, model, ignored paths)
-- [ ] GitHub OAuth
+- [x] GitHub OAuth
 - [ ] Pull request reviews
 - [ ] Webhooks and team collaboration
 - [ ] Background workers

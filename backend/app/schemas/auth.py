@@ -3,6 +3,10 @@ import uuid
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
+class GitHubExchangeRequest(BaseModel):
+    code: str = Field(min_length=10, max_length=2048)
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
@@ -24,6 +28,9 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str | None
+    github_username: str | None = None
+    avatar_url: str | None = None
+    auth_provider: str = "local"
     is_active: bool
 
 

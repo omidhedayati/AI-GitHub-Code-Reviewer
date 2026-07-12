@@ -2,6 +2,9 @@ export interface User {
   id: string;
   email: string;
   full_name: string | null;
+  github_username: string | null;
+  avatar_url: string | null;
+  auth_provider: string;
   is_active: boolean;
 }
 
@@ -25,6 +28,10 @@ export interface RegisterRequest {
   email: string;
   password: string;
   full_name?: string;
+}
+
+export interface GitHubExchangeRequest {
+  code: string;
 }
 
 export type RepositoryStatus = "pending" | "cloning" | "ready" | "failed";

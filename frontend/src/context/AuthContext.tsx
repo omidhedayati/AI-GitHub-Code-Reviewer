@@ -25,6 +25,7 @@ export interface AuthContextValue {
     password: string,
     fullName?: string,
   ) => Promise<void>;
+  completeGitHubLogin: (exchangeCode: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -80,6 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applyAuthResponse],
   );
 
+  const completeGitHubLogin = useCallback(
+    async (exchangeCode: string) => {
+      const response = await apiClient.exchangeGitHubCode({ code: exchangeCode });
+      applyAuthResponse(response.user, response.tokens);
+    },
+    [applyAuthResponse],
+  );
+
   useEffect(() => {
     setAccessTokenProvider(() => accessToken);
   }, [accessToken]);
@@ -130,9 +139,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       register,
+      completeGitHubLogin,
       logout,
     }),
-    [user, isLoading, login, register, logout],
+    [user, isLoading, login, register, completeGitHubLogin, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

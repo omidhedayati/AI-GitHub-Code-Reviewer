@@ -16,6 +16,13 @@ export function ProfilePage() {
 
       <div className="mt-8 max-w-lg space-y-6">
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          {user.avatar_url && (
+            <img
+              src={user.avatar_url}
+              alt=""
+              className="mb-4 h-16 w-16 rounded-full"
+            />
+          )}
           <dl className="space-y-4 text-sm">
             <div>
               <dt className="font-medium text-gray-500 dark:text-gray-400">
@@ -33,6 +40,24 @@ export function ProfilePage() {
                 {user.email}
               </dd>
             </div>
+            <div>
+              <dt className="font-medium text-gray-500 dark:text-gray-400">
+                Sign-in method
+              </dt>
+              <dd className="mt-1 text-gray-900 dark:text-gray-100">
+                {user.auth_provider === "github" ? "GitHub" : "Email and password"}
+              </dd>
+            </div>
+            {user.github_username && (
+              <div>
+                <dt className="font-medium text-gray-500 dark:text-gray-400">
+                  GitHub username
+                </dt>
+                <dd className="mt-1 text-gray-900 dark:text-gray-100">
+                  @{user.github_username}
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="font-medium text-gray-500 dark:text-gray-400">
                 Status

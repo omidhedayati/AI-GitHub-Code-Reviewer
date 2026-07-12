@@ -50,6 +50,18 @@ class Settings(BaseSettings):
     )
     ai_temperature: float = Field(default=0.2, alias="AI_TEMPERATURE")
 
+    github_client_id: str = Field(default="", alias="GITHUB_CLIENT_ID")
+    github_client_secret: str = Field(default="", alias="GITHUB_CLIENT_SECRET")
+    github_oauth_redirect_uri: str = Field(
+        default="http://localhost:8000/api/v1/auth/github/callback",
+        alias="GITHUB_OAUTH_REDIRECT_URI",
+    )
+    github_oauth_scopes: str = Field(
+        default="read:user user:email",
+        alias="GITHUB_OAUTH_SCOPES",
+    )
+    frontend_url: str = Field(default="http://localhost:5173", alias="FRONTEND_URL")
+
     cors_origins: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",
         alias="CORS_ORIGINS",
