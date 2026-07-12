@@ -12,9 +12,7 @@ AI GitHub Code Reviewer helps developers inspect code quality across multiple la
 
 | Dashboard | Review History |
 |-----------|----------------|
-| ![Dashboard placeholder](docs/images/dashboard.png) | ![History placeholder](docs/images/history.png) |
-
-> Screenshot placeholders — replace with actual captures once features are implemented.
+| ![Dashboard](docs/images/dashboard.png) | ![Review History](docs/images/history.png) |
 
 ## Architecture
 
